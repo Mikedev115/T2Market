@@ -1,9 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { REAL_PHOTOS } from '../photos.config.js';
 import { Sun, Cloud, Hills, Flower, Grass, Tree, Bee, Person, Goat, Pot, Hex } from './Cartoon.jsx';
 
 /* Photo slot. Uses /images/<name>.jpg when a real photo exists, otherwise a cartoon scene. */
 const BASE = import.meta.env.BASE_URL;
 export const photoUrl = (name) => `${BASE}images/${name}.jpg`;
+export const hasRealPhoto = (name) => REAL_PHOTOS.includes(name);
 
 const Dipper = ({ x, y, r = 0 }) => (
   <g transform={`translate(${x} ${y}) rotate(${r})`}><rect x="-3" y="-4" width="6" height="64" rx="3" fill="#b9854a" />
@@ -174,6 +176,6 @@ export function useImgFallback(url) {
 export default function Photo({ name, src, alt = '', className = '' }) {
   const url = src || photoUrl(name);
   const [ref, bad, fail] = useImgFallback(url);
-  if (bad) return <Placeholder name={name} className={className} />;
+  if (bad || (!src && !hasRealPhoto(name))) return <Placeholder name={name} className={className} />;
   return <img ref={ref} className={`photo ${className}`} src={url} alt={alt} loading="lazy" onError={fail} />;
 }

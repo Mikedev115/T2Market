@@ -5,3 +5,5 @@ If a file is missing the site shows the drawn illustration instead.
   soap.jpg  honey.jpg  rice.jpg  sugar.jpg  resale.jpg
 
 Product photos can also be uploaded per product from the back office (สินค้า > แก้ไข > รูปสินค้า).
+
+After adding a file, list its name in src/photos.config.js (REAL_PHOTOS) so the site uses it.

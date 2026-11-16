@@ -5,7 +5,7 @@ import { hiveReport, visitReport, seedReport, goatReport, productReport } from '
 import { num, baht } from '../lib/format.js';
 import Illustration from '../components/Illustration.jsx';
 import Icon from '../components/Icon.jsx';
-import Photo, { useImgFallback, photoUrl } from '../components/Photo.jsx';
+import Photo, { useImgFallback, photoUrl, hasRealPhoto } from '../components/Photo.jsx';
 import PublicShell, { useGoSection } from '../components/PublicShell.jsx';
 import { PhotoStrip } from '../components/ui.jsx';
 
@@ -14,7 +14,7 @@ const photoKey = (p) => (p.kind === 'resale' ? (/ข้าว/.test(p.name) ? 'r
 // Real hero photo (public/images/hero.jpg) if present, otherwise the drawn illustration.
 function HeroArt() {
   const [ref, bad, fail] = useImgFallback(photoUrl('hero'));
-  return bad
+  return bad || !hasRealPhoto('hero')
     ? <div className="hero-art"><Illustration /></div>
     : <div className="hero-art photo-frame"><img ref={ref} className="photo" src={photoUrl('hero')} alt="" onError={fail} /></div>;
 }
