@@ -12,14 +12,15 @@ export function samplePhoto(label, c1, c2, emoji) {
 
 export function createSeed() {
   // Beekeepers: each farmer records their own farm (starting hives as of a date, then every honey harvest).
+  // lat/lng are the farm's plot location (SIMULATED, all in the same tambon).
   const hiveFarms = [
-    { name: 'เกษตรกร A (ตัวอย่าง)', startHives: 10, startDate: '2026-08-01', note: '' },
-    { name: 'เกษตรกร B (ตัวอย่าง)', startHives: 9, startDate: '2026-08-01', note: '' },
-    { name: 'เกษตรกร C (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', note: '' },
-    { name: 'เกษตรกร D (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', note: '' },
-    { name: 'เกษตรกร E (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', note: '' },
-    { name: 'เกษตรกร F (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', note: '' },
-    { name: 'เกษตรกร G (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', note: '' },
+    { name: 'เกษตรกร A (ตัวอย่าง)', startHives: 10, startDate: '2026-08-01', lat: 17.840123, lng: 101.234567, note: '' },
+    { name: 'เกษตรกร B (ตัวอย่าง)', startHives: 9, startDate: '2026-08-01', lat: 17.84231, lng: 101.238901, note: '' },
+    { name: 'เกษตรกร C (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', lat: 17.837655, lng: 101.230112, note: '' },
+    { name: 'เกษตรกร D (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', lat: 17.845201, lng: 101.241377, note: '' },
+    { name: 'เกษตรกร E (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', lat: 17.833309, lng: 101.228854, note: '' },
+    { name: 'เกษตรกร F (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', lat: 17.848877, lng: 101.23661, note: '' },
+    { name: 'เกษตรกร G (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', lat: 17.83994, lng: 101.244001, note: '' },
   ].map((f) => ({ id: id('f'), ...f }));
   // [farm index, date, hives now, honey kg, honey sold kg, income, note]
   const hiveRounds = [

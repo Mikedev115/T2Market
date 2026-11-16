@@ -126,6 +126,16 @@ export function FormModal({ title, fields, initial = {}, onSave, onClose, valida
   });
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  // a field may fill itself when the form opens (e.g. the device's current position)
+  useEffect(() => {
+    fields.forEach(async (f) => {
+      if (!f.auto) return;
+      try {
+        const msg = await f.auto((val) => setV((s) => ({ ...s, [f.key]: val })));
+        if (msg) setErr(msg);
+      } catch (ex) { setErr(ex.message); }
+    });
+  }, []);
   // field.fill(value, values) may return extra values to set when this field changes (e.g. auto-fill a price)
   const set = (k, val) => setV((s) => ({ ...s, [k]: val, ...(fields.find((f) => f.key === k)?.fill?.(val, s) || {}) }));
 

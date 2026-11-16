@@ -5,6 +5,40 @@ import { num, baht, fmtDate, dm, today } from '../lib/format.js';
 import { Kpi, PageHead, Card, DataTable, FormModal, PhotoStrip, useDemo } from '../components/ui.jsx';
 import Chart from '../components/Chart.jsx';
 
+// The plot location of a farm is stored as lat/lng numbers; the form takes one text field,
+// so a coordinate pair copied from Google Maps can be pasted as is.
+const coordText = (f) => (f.lat === '' || f.lat == null || f.lng === '' || f.lng == null ? '' : `${f.lat}, ${f.lng}`);
+const hasCoord = (f) => f.lat !== '' && f.lat != null && f.lng !== '' && f.lng != null;
+const parseCoord = (s) => {
+  const p = String(s ?? '').split(',').map((x) => x.trim());
+  if (p.length !== 2 || p.some((x) => !x || Number.isNaN(Number(x)))) return null;
+  return { lat: Number(p[0]), lng: Number(p[1]) };
+};
+// blank = keep no location, null = text is not a coordinate pair
+const coordValues = (s) => (String(s ?? '').trim() ? parseCoord(s) : { lat: '', lng: '' });
+// Ask this device where it is: GPS on a phone, wifi location on a laptop.
+const geoMessage = (err) => {
+  if (err?.code === 1) return 'ยังไม่ได้อนุญาตให้ใช้ตำแหน่ง — กดอนุญาตในเบราว์เซอร์แล้วลองอีกครั้ง';
+  if (err?.code === 3) return 'หาตำแหน่งไม่ทันเวลา — ลองอีกครั้ง หรือกรอกพิกัดเอง';
+  return 'หาตำแหน่งไม่สำเร็จ — ลองอีกครั้ง หรือกรอกพิกัดเอง';
+};
+const locate = (setValue) => new Promise((resolve) => {
+  if (!navigator.geolocation) return resolve('เบราว์เซอร์นี้หาตำแหน่งไม่ได้ — กรอกพิกัดเองได้');
+  navigator.geolocation.getCurrentPosition(
+    (pos) => { setValue(`${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`); resolve(''); },
+    (err) => resolve(geoMessage(err)),
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+  );
+});
+const coordError = (s) => {
+  if (!String(s ?? '').trim()) return '';
+  const c = parseCoord(s);
+  if (!c) return 'พิกัดต้องอยู่ในรูป ละติจูด, ลองจิจูด เช่น 17.840123, 101.234567';
+  if (Math.abs(c.lat) > 90) return 'ละติจูดต้องอยู่ระหว่าง -90 ถึง 90';
+  if (Math.abs(c.lng) > 180) return 'ลองจิจูดต้องอยู่ระหว่าง -180 ถึง 180';
+  return '';
+};
+
 export default function Hives() {
   const { db, create, update, remove, saveSettings } = useData();
   const demo = useDemo();
@@ -22,6 +56,9 @@ export default function Hives() {
     { key: 'name', label: 'ชื่อเกษตรกร / ฟาร์ม', required: true, wide: true },
     { key: 'startHives', label: 'จำนวนรังตั้งต้น (รัง)', type: 'number', min: 0, required: true },
     { key: 'startDate', label: 'ข้อมูล ณ วันที่', type: 'date', required: true, default: today() },
+    { key: 'coord', label: 'พิกัดแปลง (ละติจูด, ลองจิจูด)', wide: true,
+      hint: 'ระบบหาตำแหน่งให้เองเมื่อเปิดฟอร์ม · แก้เป็นพิกัดจาก Google Maps ได้ถ้าต้องการ · เว้นว่างไว้ได้ถ้ายังไม่ระบุ',
+      auto: farmForm?.id ? undefined : (setValue) => locate(setValue) },
     { key: 'note', label: 'บันทึก', type: 'textarea' },
   ];
   const fields = [
@@ -36,7 +73,12 @@ export default function Hives() {
     { key: 'photos', label: 'รูปภาพ', type: 'photos' },
   ];
 
-  const saveFarm = (d) => (farmForm.id ? update('hiveFarms', farmForm.id, d) : create('hiveFarms', d));
+  const farmInitial = (f) => ({ ...f, coord: coordText(f) });
+  const saveFarm = (d) => {
+    const { coord, ...rest } = d;
+    const row = { ...rest, ...(coordValues(coord) ?? { lat: '', lng: '' }) };
+    return farmForm.id ? update('hiveFarms', farmForm.id, row) : create('hiveFarms', row);
+  };
   const save = (d) => (form.id ? update('hiveRounds', form.id, d) : create('hiveRounds', d));
 
   const cols = [
@@ -89,10 +131,14 @@ export default function Hives() {
           {perFarmKg.map((f) => (
             <div key={f.id} className="farm-card">
               <div className="farm-head"><b>{f.name}</b>
-                <span><button className="link" onClick={() => setFarmForm(f)}>แก้ไข</button>
+                <span><button className="link" onClick={() => setFarmForm(farmInitial(f))}>แก้ไข</button>
                   <button className="link danger" onClick={() => (rep.rows.some((r) => r.farmerId === f.id) ? demo('เกษตรกรรายนี้มีบันทึกการเก็บน้ำผึ้งแล้ว ลบไม่ได้ (ลบบันทึกก่อน)') : remove('hiveFarms', f.id))}>ลบ</button></span>
               </div>
               <div className="farm-line"><span>รังตั้งต้น (ณ {fmtDate(f.startDate)})</span><b>{num(f.startHives)} รัง</b></div>
+              <div className="farm-line"><span>พิกัดแปลง</span>
+                {hasCoord(f)
+                  ? <b>🗺 {f.lat}, {f.lng}</b>
+                  : <small className="muted">ยังไม่ระบุ</small>}</div>
               <div className="farm-line"><span>รังปัจจุบัน</span><b>{num(f.current)} รัง</b></div>
               <div className="farm-line"><span>เก็บน้ำผึ้งแล้ว</span><b>{f.harvests} ครั้ง</b></div>
               <div className="farm-line total"><span>ปริมาณรวม</span><b>{num(f.honey)} กก.</b></div>
@@ -115,7 +161,8 @@ export default function Hives() {
       </Card>
 
       {bonusForm && <FormModal title="ตั้งค่าโบนัสเก็บน้ำผึ้ง" fields={bonusFields} initial={bonusForm} onSave={(d) => saveSettings({ hiveBonus: d })} onClose={() => setBonusForm(null)} />}
-      {farmForm && <FormModal title={farmForm.id ? 'แก้ไขข้อมูลเกษตรกร' : 'เพิ่มเกษตรกร (รังตั้งต้น)'} fields={farmFields} initial={farmForm} onSave={saveFarm} onClose={() => setFarmForm(null)} />}
+      {farmForm && <FormModal title={farmForm.id ? 'แก้ไขข้อมูลเกษตรกร' : 'เพิ่มเกษตรกร (รังตั้งต้น)'} fields={farmFields} initial={farmInitial(farmForm)} onSave={saveFarm} onClose={() => setFarmForm(null)}
+        validate={(v) => coordError(v.coord)} />}
       {form && <FormModal key={form.id ?? 'new'} title={form.id ? 'แก้ไขบันทึกเก็บน้ำผึ้ง' : 'บันทึกเก็บน้ำผึ้ง'} fields={fields} initial={form} onSave={save} onClose={() => setForm(null)}
         validate={(v) => (v.total <= 0 ? 'กรุณาใส่จำนวนรังตอนนี้' : v.honeySoldKg > v.honeyKg ? 'น้ำผึ้งที่ขายต้องไม่เกินที่เก็บได้' : '')} />}
     </>

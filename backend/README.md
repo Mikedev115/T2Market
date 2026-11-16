@@ -7,6 +7,7 @@ Derived numbers (cumulative, survival rate, stock, quarterly indicators, financi
 
 | Collection   | Endpoints (GET list / POST / PUT :id / DELETE :id) | Key fields |
 |--------------|-----------------------------------------------------|------------|
+| hiveFarms    | /api/hiveFarms    | name, startHives, startDate, lat, lng (plot coordinates, decimal degrees), note |
 | hiveRounds   | /api/hiveRounds   | date, total, newHives, lost, honeyKg, honeySoldKg, income, note, photos[] |
 | goatEvents   | /api/goatEvents   | date, type(birth/bought/sold/death), sex, count, income, note |
 | visits       | /api/visits       | date, org, people, income, expense, note, photos[] |
