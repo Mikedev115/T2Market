@@ -385,3 +385,19 @@ button { font: inherit; cursor: pointer; }
 .lb-scene { width: min(92vw, 640px); aspect-ratio: 400 / 260; border-radius: 16px; overflow: hidden; } .lb-scene .ph { height: 100%; }
 .thumb .ph { height: 100%; }
 .prod.seedling .prod-price { font-size: 16px; }
+
+/* farmers (hives), stock bar, sale summary, quick links */
+.farm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 14px; }
+.farm-card { border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: #fff; display: flex; flex-direction: column; gap: 6px; }
+.farm-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+.farm-head .link { margin-left: 8px; }
+.farm-line { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; color: #555; }
+.farm-line b { color: var(--g900); }
+.farm-line.total { border-top: 1px dashed var(--line); padding-top: 6px; margin-top: 2px; }
+.farm-card .btn { margin-top: 8px; }
+.stock-bar { min-width: 130px; } .stock-bar > div { height: 8px; border-radius: 99px; background: var(--g50); overflow: hidden; margin-bottom: 4px; }
+.stock-bar i { display: block; height: 100%; background: var(--g700); border-radius: 99px; } .stock-bar i.low { background: #f59e0b; }
+.sale-sum { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 12px 14px; margin-top: 12px; border-radius: 12px; background: var(--g50); font-size: 14px; }
+.quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.quick-grid a { display: block; text-align: center; padding: 14px 8px; border-radius: 12px; border: 1px solid var(--line); background: #fff; color: var(--g900); text-decoration: none; font-weight: 500; }
+.quick-grid a:hover { background: var(--g50); }

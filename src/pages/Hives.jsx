@@ -5,60 +5,104 @@ import { num, baht, fmtDate, dm, today } from '../lib/format.js';
 import { Kpi, PageHead, Card, DataTable, FormModal, PhotoStrip, useDemo } from '../components/ui.jsx';
 import Chart from '../components/Chart.jsx';
 
-const fields = [
-  { key: 'date', label: 'วันที่ติดตาม', type: 'date', required: true, default: today() },
-  { key: 'total', label: 'จำนวนรังทั้งหมด', type: 'number', min: 0, required: true },
-  { key: 'newHives', label: 'รังที่ขยายใหม่', type: 'number', min: 0, default: 0 },
-  { key: 'lost', label: 'รังที่สูญเสีย', type: 'number', min: 0, default: 0 },
-  { key: 'honeyKg', label: 'น้ำผึ้งที่เก็บได้ (กก.)', type: 'number', min: 0, default: 0 },
-  { key: 'honeySoldKg', label: 'น้ำผึ้งที่ขาย (กก.)', type: 'number', min: 0, default: 0 },
-  { key: 'income', label: 'รายได้จากการขายน้ำผึ้ง (บาท)', type: 'number', min: 0, default: 0, wide: true },
-  { key: 'note', label: 'บันทึก', type: 'textarea' },
-  { key: 'photos', label: 'รูปภาพ', type: 'photos' },
-];
-
 export default function Hives() {
   const { db, create, update, remove } = useData();
   const demo = useDemo();
+  const [farmForm, setFarmForm] = useState(null);
   const [form, setForm] = useState(null);
-  const { rows, totals } = hiveReport(db.hiveRounds, db.settings.hiveOpening);
+  const [sel, setSel] = useState('all'); // farmer filter
+  const rep = hiveReport(db.hiveFarms, db.hiveRounds);
+  const farm = db.hiveFarms.find((f) => f.id === sel);
+  const shown = sel === 'all' ? rep.rows : rep.rows.filter((r) => r.farmerId === sel);
+  const cur = (id) => rep.farms.find((f) => f.id === id)?.current ?? '';
+
+  const farmFields = [
+    { key: 'name', label: 'ชื่อเกษตรกร / ฟาร์ม', required: true, wide: true },
+    { key: 'startHives', label: 'จำนวนรังตั้งต้น (รัง)', type: 'number', min: 0, required: true },
+    { key: 'startDate', label: 'ข้อมูล ณ วันที่', type: 'date', required: true, default: today() },
+    { key: 'note', label: 'บันทึก', type: 'textarea' },
+  ];
+  const fields = [
+    { key: 'farmerId', label: 'เกษตรกร', type: 'select', required: true, placeholder: 'เลือกเกษตรกร…', default: farm?.id ?? '', wide: true,
+      options: db.hiveFarms.map((f) => ({ value: f.id, label: f.name })), fill: (id) => ({ total: cur(id) }) },
+    { key: 'date', label: 'วันที่เก็บน้ำผึ้ง', type: 'date', required: true, default: today() },
+    { key: 'honeyKg', label: 'ปริมาณน้ำผึ้งที่เก็บได้ (กก.)', type: 'number', min: 0, required: true },
+    { key: 'total', label: 'จำนวนรังตอนนี้ (รัง)', type: 'number', min: 0, required: true, default: farm ? cur(farm.id) : '', hint: 'นับรังทั้งหมดของฟาร์ม ณ วันที่เก็บ' },
+    { key: 'honeySoldKg', label: 'น้ำผึ้งที่ขายสด (กก.) ถ้ามี', type: 'number', min: 0, default: 0 },
+    { key: 'income', label: 'รายได้จากการขาย (บาท) ถ้ามี', type: 'number', min: 0, default: 0 },
+    { key: 'note', label: 'บันทึก', type: 'textarea' },
+    { key: 'photos', label: 'รูปภาพ', type: 'photos' },
+  ];
+
+  const saveFarm = (d) => (farmForm.id ? update('hiveFarms', farmForm.id, d) : create('hiveFarms', d));
   const save = (d) => (form.id ? update('hiveRounds', form.id, d) : create('hiveRounds', d));
-  const lbl = rows.map((r) => dm(r.date));
 
   const cols = [
-    { label: 'รอบ', render: (r) => rows.indexOf(r) + 1 },
+    ...(sel === 'all' ? [{ label: 'เกษตรกร', render: (r) => <b>{r.farmName}</b> }] : []),
+    { label: 'เก็บครั้งที่', align: 'right', render: (r) => r.harvestNo },
     { label: 'วันที่', render: (r) => fmtDate(r.date) },
-    { label: 'จำนวนรัง', align: 'right', render: (r) => <b>{num(r.total)}</b> },
-    { label: 'เปลี่ยนแปลง', align: 'right', render: (r) => <span className={r.change > 0 ? 'up' : r.change < 0 ? 'down' : 'muted'}>{r.change > 0 ? '▲ +' : r.change < 0 ? '▼ ' : ''}{r.change}</span> },
-    { label: 'ขยายใหม่', align: 'right', render: (r) => num(r.newHives) },
-    { label: 'สูญเสีย', align: 'right', render: (r) => num(r.lost) },
-    { label: 'น้ำผึ้ง (กก.)', align: 'right', render: (r) => num(r.honeyKg) },
-    { label: 'ขาย (กก.)', align: 'right', render: (r) => num(r.honeySoldKg) },
+    { label: 'น้ำผึ้ง (กก.)', align: 'right', render: (r) => <b>{num(r.honeyKg)}</b> },
+    { label: 'สะสมของฟาร์ม (กก.)', align: 'right', render: (r) => num(r.cumHoney) },
+    { label: 'จำนวนรัง', align: 'right', render: (r) => <>{num(r.total)} <span className={r.change > 0 ? 'up' : r.change < 0 ? 'down' : 'muted'}>{r.change > 0 ? `▲${r.change}` : r.change < 0 ? `▼${-r.change}` : ''}</span></> },
+    { label: 'ขายสด (กก.)', align: 'right', render: (r) => num(r.honeySoldKg) },
     { label: 'รายได้', align: 'right', render: (r) => baht(r.income) },
     { label: 'รูป', render: (r) => <PhotoStrip photos={r.photos} /> },
     { label: 'บันทึก', render: (r) => <span className="muted">{r.note || '—'}</span> },
   ];
+  const t = rep.totals;
+  const chartRows = shown.slice().reverse().reverse();
+  const perFarmKg = rep.farms.filter((f) => sel === 'all' || f.id === sel);
 
   return (
     <>
-      <PageHead icon="🐝" title="ธุรกิจชันโรง" desc="จำนวนรัง รังที่ขยายใหม่ การเปลี่ยนแปลงแต่ละรอบ และน้ำผึ้งที่เก็บได้ (กก.)">
+      <PageHead icon="🐝" title="ธุรกิจชันโรง" desc="เกษตรกรแต่ละรายบันทึกข้อมูลฟาร์มของตัวเอง: รังตั้งต้น ณ วันที่ และการเก็บน้ำผึ้งแต่ละครั้ง">
         <button className="btn" onClick={() => demo('ส่งออกรายงานชันโรง (Excel / PDF)')}>⬇ ส่งออก</button>
-        <button className="btn primary" onClick={() => setForm({})}>＋ เพิ่มรอบติดตาม</button>
+        <button className="btn" onClick={() => setFarmForm({})}>＋ เพิ่มเกษตรกร</button>
+        <button className="btn primary" onClick={() => (db.hiveFarms.length ? setForm({}) : setFarmForm({}))}>＋ บันทึกเก็บน้ำผึ้ง</button>
       </PageHead>
+
       <div className="kpi-grid">
-        <Kpi icon="🐝" label="รังปัจจุบัน" value={num(totals.current)} tone="amber" sub={`ตั้งต้น ${db.settings.hiveOpening.total} รัง`} />
-        <Kpi icon="🪵" label="ขยายใหม่รวม" value={num(totals.newHives)} sub={`สูญเสียรวม ${num(totals.lost)}`} />
-        <Kpi icon="🍯" label="น้ำผึ้งสะสม" value={`${num(totals.honey)} กก.`} tone="amber" sub={`ขายแล้ว ${num(totals.honeySold)} กก.`} />
-        <Kpi icon="💰" label="รายได้ขายน้ำผึ้ง" value={baht(totals.income)} tone="blue" />
+        <Kpi icon="👨‍🌾" label="เกษตรกรที่ใช้งาน" value={`${num(t.farmers)} ราย`} />
+        <Kpi icon="🐝" label="รังรวมปัจจุบัน" value={num(t.current)} tone="amber" sub={`ตั้งต้นรวม ${num(t.start)} รัง`} />
+        <Kpi icon="🍯" label="น้ำผึ้งรวมสะสม" value={`${num(t.honey)} กก.`} tone="amber" sub={`เก็บแล้ว ${t.harvests} ครั้ง`} />
+        <Kpi icon="💰" label="รายได้ขายน้ำผึ้งสด" value={baht(t.income)} tone="blue" sub={`ขายแล้ว ${num(t.honeySold)} กก.`} />
       </div>
-      <div className="grid-2">
-        <Card title="จำนวนรังแต่ละรอบ"><Chart type="line" color="#d97706" labels={lbl} values={rows.map((r) => r.total)} unit="รัง" /></Card>
-        <Card title="น้ำผึ้งที่เก็บได้แต่ละรอบ"><Chart color="#f59e0b" labels={lbl} values={rows.map((r) => r.honeyKg)} unit="กก." /></Card>
-      </div>
-      <Card title="ผลการติดตามแต่ละรอบ">
-        <DataTable cols={cols} rows={rows} onEdit={setForm} onDelete={(r) => remove('hiveRounds', r.id)} />
+
+      <Card title="เกษตรกรแต่ละราย" right={<small className="muted">แตะชื่อเพื่อดูเฉพาะฟาร์ม</small>}>
+        <div className="chips">
+          <button className={`chip ${sel === 'all' ? 'on' : ''}`} onClick={() => setSel('all')}>ทั้งหมด</button>
+          {rep.farms.map((f) => <button key={f.id} className={`chip ${sel === f.id ? 'on' : ''}`} onClick={() => setSel(f.id)}>{f.name}</button>)}
+        </div>
+        <div className="farm-grid">
+          {perFarmKg.map((f) => (
+            <div key={f.id} className="farm-card">
+              <div className="farm-head"><b>{f.name}</b>
+                <span><button className="link" onClick={() => setFarmForm(f)}>แก้ไข</button>
+                  <button className="link danger" onClick={() => (rep.rows.some((r) => r.farmerId === f.id) ? demo('เกษตรกรรายนี้มีบันทึกการเก็บน้ำผึ้งแล้ว ลบไม่ได้ (ลบบันทึกก่อน)') : remove('hiveFarms', f.id))}>ลบ</button></span>
+              </div>
+              <div className="farm-line"><span>รังตั้งต้น (ณ {fmtDate(f.startDate)})</span><b>{num(f.startHives)} รัง</b></div>
+              <div className="farm-line"><span>รังปัจจุบัน</span><b>{num(f.current)} รัง</b></div>
+              <div className="farm-line"><span>เก็บน้ำผึ้งแล้ว</span><b>{f.harvests} ครั้ง</b></div>
+              <div className="farm-line total"><span>ปริมาณรวม</span><b>{num(f.honey)} กก.</b></div>
+              <button className="btn sm block" onClick={() => setForm({ farmerId: f.id, total: f.current })}>＋ บันทึกเก็บน้ำผึ้ง</button>
+            </div>
+          ))}
+          {perFarmKg.length === 0 && <p className="empty">ยังไม่มีเกษตรกร กด "เพิ่มเกษตรกร" เพื่อเริ่ม</p>}
+        </div>
       </Card>
-      {form && <FormModal title={form.id ? 'แก้ไขรอบติดตาม' : 'เพิ่มรอบติดตาม'} fields={fields} initial={form} onSave={save} onClose={() => setForm(null)} />}
+
+      <div className="grid-2">
+        <Card title="จำนวนรังรวมหลังแต่ละบันทึก"><Chart type="line" color="#d97706" labels={rep.timeline.map((r) => dm(r.date))} values={rep.timeline.map((r) => r.total)} unit="รัง" /></Card>
+        <Card title="น้ำผึ้งรวมของแต่ละเกษตรกร"><Chart color="#f59e0b" labels={rep.farms.map((f) => f.name.replace(' (ตัวอย่าง)', ''))} values={rep.farms.map((f) => +f.honey.toFixed(2))} unit="กก." /></Card>
+      </div>
+
+      <Card title={farm ? `บันทึกการเก็บน้ำผึ้ง · ${farm.name}` : 'บันทึกการเก็บน้ำผึ้งทั้งหมด'}>
+        <DataTable cols={cols} rows={[...chartRows].reverse()} onEdit={setForm} onDelete={(r) => remove('hiveRounds', r.id)} />
+      </Card>
+
+      {farmForm && <FormModal title={farmForm.id ? 'แก้ไขข้อมูลเกษตรกร' : 'เพิ่มเกษตรกร (รังตั้งต้น)'} fields={farmFields} initial={farmForm} onSave={saveFarm} onClose={() => setFarmForm(null)} />}
+      {form && <FormModal key={form.id ?? 'new'} title={form.id ? 'แก้ไขบันทึกเก็บน้ำผึ้ง' : 'บันทึกเก็บน้ำผึ้ง'} fields={fields} initial={form} onSave={save} onClose={() => setForm(null)}
+        validate={(v) => (v.total <= 0 ? 'กรุณาใส่จำนวนรังตอนนี้' : v.honeySoldKg > v.honeyKg ? 'น้ำผึ้งที่ขายต้องไม่เกินที่เก็บได้' : '')} />}
     </>
   );
 }

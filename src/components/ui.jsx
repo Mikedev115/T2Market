@@ -126,12 +126,14 @@ export function FormModal({ title, fields, initial = {}, onSave, onClose, valida
   });
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
-  const set = (k, val) => setV((s) => ({ ...s, [k]: val }));
+  // field.fill(value, values) may return extra values to set when this field changes (e.g. auto-fill a price)
+  const set = (k, val) => setV((s) => ({ ...s, [k]: val, ...(fields.find((f) => f.key === k)?.fill?.(val, s) || {}) }));
 
   const submit = async (e) => {
     e.preventDefault();
     const out = {};
     for (const f of fields) {
+      if (f.showIf && !f.showIf(v)) continue; // hidden field: skip
       let x = v[f.key];
       if (f.required && (x === '' || x === null)) return setErr(`กรุณากรอก "${f.label}"`);
       if (f.type === 'number') {
@@ -151,7 +153,7 @@ export function FormModal({ title, fields, initial = {}, onSave, onClose, valida
     <Modal title={title} onClose={onClose}>
       <form onSubmit={submit} className="form">
         <div className="form-grid">
-          {fields.map((f) => (
+          {fields.filter((f) => !f.showIf || f.showIf(v)).map((f) => (
             <label key={f.key} className={`field ${f.wide || f.type === 'textarea' || f.type === 'photos' ? 'wide' : ''}`}>
               <span>{f.label}{f.required && <i> *</i>}</span>
               {f.type === 'select' ? (

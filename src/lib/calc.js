@@ -2,21 +2,52 @@
 const byDate = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
 export const sum = (rows, f) => rows.reduce((s, r) => s + (Number(f(r)) || 0), 0);
 
-export function hiveReport(rounds, opening) {
-  const rows = [...rounds].sort(byDate);
-  let cum = 0;
-  const out = rows.map((r, i) => {
-    cum += Number(r.honeyKg) || 0;
-    const prev = i === 0 ? opening.total : rows[i - 1].total;
-    return { ...r, change: r.total - prev, cumHoney: cum };
+// Total hives of all farms at a point in time: each farm's latest record up to that point
+// (or its starting count once its start date has passed).
+export function hiveBalance(farms, rounds, pred = () => true, startPred = () => true) {
+  return sum(farms.filter(startPred), (f) => {
+    const mine = rounds.filter((r) => r.farmerId === f.id && pred(r)).sort(byDate);
+    return mine.length ? mine[mine.length - 1].total : f.startHives;
+  });
+}
+
+// Honey harvest records of all farmers, per farm and overall.
+export function hiveReport(farms, rounds) {
+  const sorted = [...rounds].sort(byDate);
+  const name = (id) => farms.find((f) => f.id === id)?.name ?? '—';
+  const cnt = {}, last = {}, cumKg = {};
+  const rows = sorted.map((r) => {
+    cnt[r.farmerId] = (cnt[r.farmerId] || 0) + 1;
+    cumKg[r.farmerId] = (cumKg[r.farmerId] || 0) + (Number(r.honeyKg) || 0);
+    const start = farms.find((f) => f.id === r.farmerId)?.startHives ?? 0;
+    const prev = last[r.farmerId] ?? start;
+    last[r.farmerId] = r.total;
+    return { ...r, farmName: name(r.farmerId), harvestNo: cnt[r.farmerId], change: r.total - prev, cumHoney: cumKg[r.farmerId] };
+  });
+  // overall hive count after each record (for the chart)
+  const cur = Object.fromEntries(farms.map((f) => [f.id, f.startHives]));
+  const timeline = rows.map((r) => { cur[r.farmerId] = r.total; return { date: r.date, total: sum(Object.values(cur), (x) => x) }; });
+  const perFarm = farms.map((f) => {
+    const mine = rows.filter((r) => r.farmerId === f.id);
+    return {
+      ...f,
+      current: mine.length ? mine[mine.length - 1].total : f.startHives,
+      harvests: mine.length,
+      honey: sum(mine, (r) => r.honeyKg),
+      honeySold: sum(mine, (r) => r.honeySoldKg),
+      income: sum(mine, (r) => r.income),
+      lastDate: mine.length ? mine[mine.length - 1].date : '',
+    };
   });
   return {
-    rows: out,
+    rows,
+    farms: perFarm,
+    timeline,
     totals: {
-      rounds: rows.length,
-      current: rows.length ? rows[rows.length - 1].total : opening.total,
-      newHives: sum(rows, (r) => r.newHives),
-      lost: sum(rows, (r) => r.lost),
+      farmers: farms.length,
+      start: sum(farms, (f) => f.startHives),
+      current: sum(perFarm, (f) => f.current),
+      harvests: rows.length,
       honey: sum(rows, (r) => r.honeyKg),
       honeySold: sum(rows, (r) => r.honeySoldKg),
       income: sum(rows, (r) => r.income),
@@ -96,9 +127,13 @@ export function productReport(products, moves) {
     const inQty = sum(ins, (x) => x.qty);
     const adj = sum(m.filter((x) => x.type === 'adjust'), (x) => x.qty);
     const sold = sum(m.filter((x) => x.type === 'sale'), (x) => x.qty);
-    const revenue = sum(m.filter((x) => x.type === 'sale'), (x) => x.qty * x.unitPrice);
+    const sales = m.filter((x) => x.type === 'sale');
+    const revenue = sum(sales, (x) => x.qty * x.unitPrice);
+    const isW = (x) => x.channel === 'wholesale';
+    const soldWholesale = sum(sales.filter(isW), (x) => x.qty), soldRetail = sold - soldWholesale;
+    const revWholesale = sum(sales.filter(isW), (x) => x.qty * x.unitPrice), revRetail = revenue - revWholesale;
     const avgCost = inQty ? sum(ins, (x) => x.qty * (x.unitCost || 0)) / inQty : 0;
-    return { ...p, kind: p.kind || 'bee', inQty, adj, sold, revenue, avgCost, cogs: sold * avgCost, stock: inQty + adj - sold };
+    return { ...p, kind: p.kind || 'bee', inQty, adj, sold, revenue, soldWholesale, soldRetail, revWholesale, revRetail, avgCost, cogs: sold * avgCost, stock: inQty + adj - sold };
   });
   const mrows = [...moves].sort(byDate).map((x) => {
     const p = products.find((q) => q.id === x.productId);

@@ -11,15 +11,28 @@ export function samplePhoto(label, c1, c2, emoji) {
 }
 
 export function createSeed() {
+  // Beekeepers: each farmer records their own farm (starting hives as of a date, then every honey harvest).
+  const hiveFarms = [
+    { name: 'เกษตรกร A (ตัวอย่าง)', startHives: 10, startDate: '2026-08-01', note: '' },
+    { name: 'เกษตรกร B (ตัวอย่าง)', startHives: 9, startDate: '2026-08-01', note: '' },
+    { name: 'เกษตรกร C (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', note: '' },
+    { name: 'เกษตรกร D (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', note: '' },
+    { name: 'เกษตรกร E (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', note: '' },
+    { name: 'เกษตรกร F (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', note: '' },
+    { name: 'เกษตรกร G (ตัวอย่าง)', startHives: 8, startDate: '2026-08-01', note: '' },
+  ].map((f) => ({ id: id('f'), ...f }));
+  // [farm index, date, hives now, honey kg, honey sold kg, income, note]
   const hiveRounds = [
-    { date: '2026-08-15', total: 59, newHives: 0, lost: 0, honeyKg: 0.8, honeySoldKg: 0, income: 0, note: 'รอบแรกหลังเริ่ม MOU' },
-    { date: '2026-08-31', total: 61, newHives: 3, lost: 1, honeyKg: 1.2, honeySoldKg: 0.5, income: 500, note: '' },
-    { date: '2026-09-15', total: 64, newHives: 4, lost: 1, honeyKg: 1.6, honeySoldKg: 1.0, income: 1000, note: '' },
-    { date: '2026-09-30', total: 68, newHives: 5, lost: 1, honeyKg: 2.0, honeySoldKg: 1.5, income: 1500, note: 'ช่วงดอกไม้บาน' },
-    { date: '2026-10-15', total: 72, newHives: 5, lost: 1, honeyKg: 2.4, honeySoldKg: 2.0, income: 2000, note: '' },
-    { date: '2026-10-31', total: 77, newHives: 6, lost: 1, honeyKg: 3.1, honeySoldKg: 2.5, income: 2500, note: 'ผลิตสบู่น้ำผึ้งชันโรง 500 ก้อน' },
-    { date: '2026-11-14', total: 83, newHives: 7, lost: 1, honeyKg: 3.6, honeySoldKg: 3.0, income: 3000, note: 'รังแข็งแรง ขยายต่อเนื่อง' },
-  ].map((r, i) => ({ id: id('h'), ...r, photos: i >= 5 ? [samplePhoto(`รังชันโรง รอบ ${i + 1}`, '#f59e0b', '#b45309', '🐝')] : [] }));
+    [0, '2026-08-20', 10, 0.3, 0, 0, ''], [1, '2026-08-22', 9, 0.2, 0, 0, ''], [2, '2026-08-28', 9, 0.2, 0.2, 200, ''],
+    [0, '2026-09-18', 12, 0.5, 0.3, 300, 'ขยายรังเพิ่ม 2 รัง'], [3, '2026-09-20', 9, 0.4, 0, 0, ''], [4, '2026-09-25', 9, 0.3, 0.2, 200, ''],
+    [1, '2026-10-05', 11, 0.6, 0.5, 500, ''], [5, '2026-10-08', 9, 0.4, 0, 0, ''], [6, '2026-10-12', 8, 0.2, 0, 0, ''],
+    [0, '2026-10-20', 13, 0.8, 0.7, 700, 'ช่วงดอกไม้บาน'], [2, '2026-10-24', 10, 0.5, 0.4, 400, ''],
+    [3, '2026-11-02', 10, 0.6, 0.5, 500, ''], [4, '2026-11-06', 10, 0.5, 0.4, 400, ''], [5, '2026-11-10', 10, 0.7, 0.5, 500, ''],
+    [6, '2026-11-12', 9, 0.4, 0.3, 300, ''], [1, '2026-11-14', 12, 0.7, 0.2, 200, 'รังแข็งแรง'],
+  ].map(([fi, date, total, honeyKg, honeySoldKg, income, note], i) => ({
+    id: id('h'), farmerId: hiveFarms[fi].id, date, total, honeyKg, honeySoldKg, income, note,
+    photos: i >= 13 ? [samplePhoto('รังชันโรง', '#f59e0b', '#b45309', '🐝')] : [],
+  }));
 
   const visits = [
     { date: '2026-08-22', org: 'กลุ่มเกษตรกรบ้านตัวอย่าง', people: 15, income: 3000, expense: 1200, note: '' },
@@ -33,11 +46,11 @@ export function createSeed() {
 
   const b1 = id('b'), b2 = id('b'), b3 = id('b'), b4 = id('b'), b5 = id('b'), b6 = id('b');
   const seedBatches = [
-    { id: b1, date: '2026-08-25', species: 'พะยูง', sown: 300, survived: 261, ready: 200, price: 25, note: '' },
+    { id: b1, date: '2026-08-25', species: 'มะค่า', sown: 300, survived: 261, ready: 200, price: 25, note: '' },
     { id: b2, date: '2026-09-10', species: 'มะริด', sown: 400, survived: 372, ready: 180, price: 20, note: 'เพาะที่เรือนเพาะชำ 2 แห่ง' },
     { id: b3, date: '2026-09-10', species: 'ผักหวานป่า', sown: 300, survived: 252, ready: 60, price: 35, note: 'โตช้า ทยอยพร้อมขาย' },
     { id: b4, date: '2026-09-10', species: 'มะแขว่น', sown: 300, survived: 276, ready: 90, price: 25, note: '' },
-    { id: b5, date: '2026-10-12', species: 'ประดู่ป่า', sown: 350, survived: 301, ready: 0, price: 18, note: 'ยังไม่พร้อมจำหน่าย' },
+    { id: b5, date: '2026-10-12', species: 'สมอพิเภก', sown: 350, survived: 301, ready: 0, price: 18, note: 'ยังไม่พร้อมจำหน่าย' },
     { id: b6, date: '2026-11-05', species: 'ยางนา', sown: 450, survived: 410, ready: 0, price: 20, note: '' },
   ].map((r, i) => ({ ...r, photos: i === 1 ? [samplePhoto('เรือนเพาะชำ', '#4ade80', '#166534', '🌱')] : [] }));
 
@@ -66,24 +79,26 @@ export function createSeed() {
 
   const p1 = id('p'), p2 = id('p'), p3 = id('p'), p4 = id('p');
   const products = [
-    { id: p1, kind: 'bee', name: 'สบู่น้ำผึ้งชันโรง', unit: 'ก้อน', price: 60, icon: '🧼' },
-    { id: p2, kind: 'bee', name: 'น้ำผึ้งชันโรง', unit: 'ขวด', price: 350, icon: '🍯' },
-    { id: p3, kind: 'resale', name: 'ข้าวสารอินทรีย์ (ตัวอย่าง)', unit: 'กก.', price: 60, icon: '🌾' },
-    { id: p4, kind: 'resale', name: 'น้ำตาลมะพร้าว (ตัวอย่าง)', unit: 'กก.', price: 55, icon: '🥥' },
+    { id: p1, kind: 'bee', name: 'สบู่น้ำผึ้งชันโรง', unit: 'ก้อน', priceWholesale: 80, priceRetail: 100, icon: '🧼' },
+    { id: p2, kind: 'bee', name: 'น้ำผึ้งชันโรง', unit: 'ขวด', priceWholesale: 300, priceRetail: 350, icon: '🍯' },
+    { id: p3, kind: 'resale', name: 'ข้าวสารอินทรีย์ (ตัวอย่าง)', unit: 'กก.', priceWholesale: 50, priceRetail: 60, icon: '🌾' },
+    { id: p4, kind: 'resale', name: 'น้ำตาลมะพร้าว (ตัวอย่าง)', unit: 'กก.', priceWholesale: 48, priceRetail: 55, icon: '🥥' },
   ].map((p) => ({ ...p, photos: [] }));
 
-  const mv = (date, productId, type, qty, unitPrice = 0, unitCost = 0, note = '') => ({ id: id('m'), date, productId, type, qty, unitPrice, unitCost, note });
+  // Sales are logged by channel: 'retail' (ขายปลีก) or 'wholesale' (ขายส่ง); each sale deducts stock.
+  const mv = (date, productId, type, qty, unitPrice = 0, unitCost = 0, note = '', channel = '') => ({ id: id('m'), date, productId, type, qty, unitPrice, unitCost, note, channel });
+  const R = 'retail', W = 'wholesale';
   const stockMoves = [
     mv('2026-10-31', p1, 'in', 500, 0, 25, 'ผลิตล็อตแรก 500 ก้อน'),
-    mv('2026-11-02', p1, 'sale', 12, 60), mv('2026-11-05', p1, 'sale', 20, 60), mv('2026-11-09', p1, 'sale', 15, 60),
-    mv('2026-11-12', p1, 'sale', 30, 60, 0, 'ลูกทัวร์ดูงาน'), mv('2026-11-14', p1, 'sale', 10, 60),
+    mv('2026-11-02', p1, 'sale', 12, 100, 0, '', R), mv('2026-11-05', p1, 'sale', 20, 80, 0, '', W), mv('2026-11-09', p1, 'sale', 15, 100, 0, '', R),
+    mv('2026-11-12', p1, 'sale', 30, 100, 0, 'ลูกทัวร์ดูงาน', R), mv('2026-11-14', p1, 'sale', 10, 100, 0, '', R),
     mv('2026-11-01', p2, 'in', 25, 0, 0, 'บรรจุขวด'),
-    mv('2026-11-04', p2, 'sale', 4, 350), mv('2026-11-08', p2, 'sale', 6, 350), mv('2026-11-13', p2, 'sale', 5, 350),
+    mv('2026-11-04', p2, 'sale', 4, 350, 0, '', R), mv('2026-11-08', p2, 'sale', 6, 300, 0, '', W), mv('2026-11-13', p2, 'sale', 5, 350, 0, '', R),
     mv('2026-09-20', p3, 'in', 100, 0, 45, 'ซื้อจากกลุ่มเกษตรกร'),
-    mv('2026-10-05', p3, 'sale', 30, 60), mv('2026-10-22', p3, 'sale', 25, 60),
-    mv('2026-11-05', p3, 'in', 80, 0, 46), mv('2026-11-14', p3, 'sale', 20, 60),
+    mv('2026-10-05', p3, 'sale', 30, 50, 0, '', W), mv('2026-10-22', p3, 'sale', 25, 60, 0, '', R),
+    mv('2026-11-05', p3, 'in', 80, 0, 46), mv('2026-11-14', p3, 'sale', 20, 60, 0, '', R),
     mv('2026-10-10', p4, 'in', 60, 0, 38),
-    mv('2026-10-25', p4, 'sale', 20, 55), mv('2026-11-08', p4, 'sale', 15, 55),
+    mv('2026-10-25', p4, 'sale', 20, 55, 0, '', R), mv('2026-11-08', p4, 'sale', 15, 48, 0, '', W),
   ];
 
   const ledger = [
@@ -98,17 +113,6 @@ export function createSeed() {
     { date: '2026-11-08', unit: 'hive', type: 'expense', amount: 9800, fromGrant: true, desc: 'กล่องรังชันโรง' },
   ].map((r) => ({ id: id('l'), ...r, photos: [] }));
 
-  const orders = [
-    { no: 'T4A-261110-01', date: '2026-11-10', name: 'คุณสมศรี ใจดี', phone: '0812345678', delivery: 'pickup', address: '', note: '',
-      items: [{ kind: 'product', refId: p1, name: 'สบู่น้ำผึ้งชันโรง', unit: 'ก้อน', qty: 5, price: 60 }], total: 300, status: 'done', applied: true },
-    { no: 'T4A-261115-01', date: '2026-11-15', name: 'คุณวิชัย รักป่า', phone: '0898765432', delivery: 'ship', address: '99 ม.3 ต.ตัวอย่าง อ.เมือง จ.ตัวอย่าง 10000', note: 'ขอใบเสร็จ',
-      items: [{ kind: 'product', refId: p2, name: 'น้ำผึ้งชันโรง', unit: 'ขวด', qty: 2, price: 350 }, { kind: 'seed', refId: b2, name: 'กล้ามะริด', unit: 'ต้น', qty: 10, price: 20 }], total: 900, status: 'pending', applied: false },
-  ].map((r) => ({ id: id('o'), ...r }));
-  const bookings = [
-    { no: 'BK-261112-01', date: '2026-11-12', org: 'โรงเรียนตัวอย่างวิทยา', contact: 'ครูมาลี', phone: '0823456789', visitDate: '2026-12-05', people: 30, topics: ['hive', 'nursery'], note: 'ทัศนศึกษานักเรียน ม.2', status: 'confirmed' },
-    { no: 'BK-261114-01', date: '2026-11-14', org: 'อบต.ตัวอย่าง', contact: 'คุณสุรชัย', phone: '0834567890', visitDate: '2026-12-18', people: 15, topics: ['goat', 'hive'], note: '', status: 'pending' },
-  ].map((r) => ({ id: id('k'), ...r }));
-
   // Quarterly report (period 1) -- text and targets copied from the RECOFTC form.
   const reports = [
     {
@@ -120,7 +124,7 @@ export function createSeed() {
       meeting: '',
       evidence: { ledger: true, receipts: true, transfer: false, bank: false, sales: false, stock: false, minutes: false, photos: true, allocation: false },
       units: {
-        hive: { status: 'onplan', farmers: 7, activities: 'ผลิตสบู่น้ำผึ้งชันโรง จำนวน 500 ก้อน', problems: '', next: 'วางจำหน่ายสบู่น้ำผึ้งชันโรงและผลิตภัณฑ์น้ำผึ้ง\nสร้างจุดรวมผึ้งชันโรง 1 แห่ง\nจัดซื้อแม่พันธุ์และกล่องรังชันโรง',
+        hive: { status: 'onplan', activities: 'ผลิตสบู่น้ำผึ้งชันโรง จำนวน 500 ก้อน', problems: '', next: 'วางจำหน่ายสบู่น้ำผึ้งชันโรงและผลิตภัณฑ์น้ำผึ้ง\nสร้างจุดรวมผึ้งชันโรง 1 แห่ง\nจัดซื้อแม่พันธุ์และกล่องรังชันโรง',
           targets: { farmers: 10, start: 59, net: 30, end: 100, honey: 30, honeySold: 30, revenue: 30000 } },
         goat: { status: 'onplan', farmers: 2, activities: '', problems: '', next: '',
           targets: { farmers: 2, start: 19, born: 5, bought: 0, sold: 10, died: 0, end: 29, revenue: 30000 } },
@@ -138,9 +142,8 @@ export function createSeed() {
   ];
 
   return {
-    orders, bookings, ledger, hiveRounds, visits, seedBatches, seedSales, goatEvents, products, stockMoves, reports,
+    ledger, hiveFarms, hiveRounds, visits, seedBatches, seedSales, goatEvents, products, stockMoves, reports,
     settings: {
-      hiveOpening: { date: '2026-08-01', total: 59 },
       goatOpening: { date: '2026-08-01', male: 5, female: 14 },
     },
   };

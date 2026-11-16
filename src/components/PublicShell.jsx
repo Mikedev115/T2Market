@@ -35,7 +35,7 @@ export default function PublicShell({ children }) {
   const tabs = [
     { key: 'top', icon: 'home', label: 'หน้าแรก', onClick: () => go('top') },
     { key: 'activities', icon: 'hive', label: 'กิจกรรม', onClick: () => go('activities') },
-    { key: 'products', icon: 'bag', label: 'สินค้า', onClick: () => go('products') },
+    { key: 'products', icon: 'bag', label: 'ผลิตภัณฑ์', onClick: () => go('products') },
     { key: 'gallery', icon: 'image', label: 'ภาพ', onClick: () => go('gallery') },
     { key: 'admin', icon: 'lock', label: 'หลังบ้าน', onClick: () => nav(isIn() ? '/admin' : '/login') },
   ];
@@ -43,16 +43,16 @@ export default function PublicShell({ children }) {
   return (
     <div className="public">
       <header className="pub-nav">
-        <button className="brand" onClick={() => go('top')}>🌳 <b>Trees4All</b> <span>ต้นไม้ของเรา รักษ์สันติสุข</span></button>
+        <button className="brand" onClick={() => go('top')}>🌳 <b>T2Market</b> <span>ต้นไม้ของเรา รักษ์สันติสุข</span></button>
         <nav>
           <button className="navlink" onClick={() => go('activities')}>กิจกรรม</button>
-          <button className="navlink" onClick={() => go('products')}>สินค้า</button>
+          <button className="navlink" onClick={() => go('products')}>ผลิตภัณฑ์</button>
           <button className="navlink" onClick={() => go('gallery')}>ภาพกิจกรรม</button>
-          <Link className="btn primary sm nowrap" to="/booking">จองศึกษาดูงาน</Link>
+          <Link className="btn primary sm nowrap" to="/login">เข้าระบบบันทึกข้อมูล</Link>
         </nav>
       </header>
       {children}
-      <footer className="pub-foot">🌳 วิสาหกิจชุมชนต้นไม้ของเรา รักษ์สันติสุข · โครงการ Trees4All<br /><small>ตัวอย่างหน้าเว็บ (เดโม)</small></footer>
+      <footer className="pub-foot">🌳 วิสาหกิจชุมชนต้นไม้ของเรา รักษ์สันติสุข · โครงการ T2Market<br /><small>ตัวอย่างหน้าเว็บ (เดโม)</small></footer>
       <TabBar tabs={tabs} active={pathname === '/' ? spy : -1} />
     </div>
   );

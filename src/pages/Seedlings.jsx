@@ -1,17 +1,31 @@
 import { useState } from 'react';
 import { useData } from '../data.jsx';
 import { seedReport } from '../lib/calc.js';
-import { num, baht, pct, fmtDate, today } from '../lib/format.js';
+import { num, baht, pct, fmtDate, monthShort, today } from '../lib/format.js';
 import { Kpi, PageHead, Card, DataTable, FormModal, PhotoStrip, useDemo } from '../components/ui.jsx';
 import Chart from '../components/Chart.jsx';
 
+// Species is chosen when recording data (not shown on the first page). "อื่นๆ" lets the user type any species.
+const SPECIES = ['ยางนา', 'มะแขว่น', 'มะค่า', 'ผักหวานป่า', 'สมอพิเภก'];
+const speciesOptions = [...SPECIES.map((s) => ({ value: s, label: s })), { value: '__other', label: 'อื่นๆ (ระบุชนิดเอง)' }];
+const withSpecies = (f) => {
+  if (!f.id && !f.species) return f;
+  const known = SPECIES.includes(f.species);
+  return { ...f, speciesPick: known ? f.species : '__other', speciesOther: known ? '' : f.species };
+};
+const speciesFields = [
+  { key: 'speciesPick', label: 'ชนิดไม้', type: 'select', required: true, placeholder: 'เลือกชนิดไม้…', options: speciesOptions },
+  { key: 'speciesOther', label: 'ระบุชนิดไม้', required: true, showIf: (v) => v.speciesPick === '__other' },
+];
+const toSpecies = ({ speciesPick, speciesOther, ...rest }) => ({ ...rest, species: speciesPick === '__other' ? speciesOther.trim() : speciesPick });
+
 const batchFields = [
   { key: 'date', label: 'วันที่เพาะ', type: 'date', required: true, default: today() },
-  { key: 'species', label: 'ชนิดพันธุ์ไม้', required: true },
+  ...speciesFields,
   { key: 'sown', label: 'จำนวนที่เพาะ (ต้น)', type: 'number', min: 0, required: true },
   { key: 'survived', label: 'จำนวนที่รอด (ต้น)', type: 'number', min: 0, required: true },
   { key: 'ready', label: 'พร้อมจำหน่าย (ต้น)', type: 'number', min: 0, default: 0 },
-  { key: 'price', label: 'ราคาจำหน่ายต่อต้น (บาท)', type: 'number', min: 0, default: 20, hint: 'ใช้ตอนลูกค้าสั่งจองจากหน้าบ้าน' },
+  { key: 'price', label: 'ราคาจำหน่ายต่อต้น (บาท)', type: 'number', min: 0, default: 20 },
   { key: 'note', label: 'บันทึก', type: 'textarea' },
   { key: 'photos', label: 'รูปภาพ', type: 'photos' },
 ];
@@ -22,8 +36,12 @@ export default function Seedlings() {
   const [batchForm, setBatchForm] = useState(null);
   const [saleForm, setSaleForm] = useState(null);
   const { batches, sales, totals } = seedReport(db.seedBatches, db.seedSales);
+  // overview by month (no species on the first view)
+  const mk = (d) => d.slice(0, 7);
+  const monthKeys = [...new Set([...batches, ...sales].map((r) => mk(r.date)))].sort();
+  const months = monthKeys.map((k) => [monthShort(`${k}-01`), batches.filter((b) => mk(b.date) === k).reduce((s, b) => s + b.sown, 0), sales.filter((x) => mk(x.date) === k).reduce((s, x) => s + x.qty, 0)]);
 
-  const saveBatch = (d) => (batchForm.id ? update('seedBatches', batchForm.id, d) : create('seedBatches', d));
+  const saveBatch = (d) => { const x = toSpecies(d); return batchForm.id ? update('seedBatches', batchForm.id, x) : create('seedBatches', x); };
   const saveSale = (d) => (saleForm.id ? update('seedSales', saleForm.id, { ...d, unitPrice: d.kind === 'give' ? 0 : d.unitPrice }) : create('seedSales', { ...d, unitPrice: d.kind === 'give' ? 0 : d.unitPrice }));
   const availFor = (batchId, editing) => {
     const b = batches.find((x) => x.id === batchId);
@@ -33,7 +51,7 @@ export default function Seedlings() {
   const saleFields = [
     { key: 'date', label: 'วันที่', type: 'date', required: true, default: today() },
     { key: 'kind', label: 'ประเภท', type: 'select', required: true, default: 'sale', options: [{ value: 'sale', label: 'จำหน่าย' }, { value: 'give', label: 'แจก / ใช้ในกิจกรรม' }] },
-    { key: 'batchId', label: 'ล็อตกล้าไม้', type: 'select', required: true, placeholder: 'เลือกล็อต…', wide: true,
+    { key: 'batchId', label: 'เลือกชนิดไม้ (ล็อตที่เพาะ)', type: 'select', required: true, placeholder: 'เลือกชนิดไม้…', wide: true,
       options: batches.map((b) => ({ value: b.id, label: `${b.species} (${fmtDate(b.date)}) · เหลือ ${b.available}` })) },
     { key: 'qty', label: 'จำนวน (ต้น)', type: 'number', min: 1, required: true },
     { key: 'unitPrice', label: 'ราคาต่อต้น (บาท)', type: 'number', min: 0, default: 0, hint: 'ไม่ต้องใส่ถ้าเป็นการแจก' },
@@ -42,7 +60,7 @@ export default function Seedlings() {
 
   const batchCols = [
     { label: 'วันที่เพาะ', render: (r) => fmtDate(r.date) },
-    { label: 'ชนิดพันธุ์', render: (r) => <b>{r.species}</b> },
+    { label: 'ชนิดไม้', render: (r) => <b>{r.species}</b> },
     { label: 'เพาะ', align: 'right', render: (r) => num(r.sown) },
     { label: 'รอด', align: 'right', render: (r) => num(r.survived) },
     { label: 'อัตรารอด', align: 'right', render: (r) => <span className="rate"><i style={{ width: `${r.rate}%` }} />{pct(r.rate)}</span> },
@@ -55,7 +73,7 @@ export default function Seedlings() {
   const saleCols = [
     { label: 'วันที่', render: (r) => fmtDate(r.date) },
     { label: 'ประเภท', render: (r) => r.kind === 'sale' ? <span className="tag green">จำหน่าย</span> : <span className="tag amber">แจก/ใช้</span> },
-    { label: 'ชนิดพันธุ์', render: (r) => r.species },
+    { label: 'ชนิดไม้', render: (r) => r.species },
     { label: 'จำนวน', align: 'right', render: (r) => num(r.qty) },
     { label: 'ราคา/ต้น', align: 'right', render: (r) => (r.kind === 'sale' ? baht(r.unitPrice) : '—') },
     { label: 'รวม', align: 'right', render: (r) => <b>{r.kind === 'sale' ? baht(r.total) : '—'}</b> },
@@ -64,10 +82,10 @@ export default function Seedlings() {
 
   return (
     <>
-      <PageHead icon="🌱" title="ธุรกิจเรือนเพาะชำ" desc="การเพาะ อัตราการรอดตาย ชนิดพันธุ์ กล้าไม้พร้อมจำหน่าย และการขาย/แจกแต่ละครั้ง">
+      <PageHead icon="🌱" title="ธุรกิจเรือนเพาะชำ" desc="ภาพรวมการเพาะ อัตราการรอด และกล้าไม้คงเหลือ — เลือกชนิดไม้ตอนกดบันทึกข้อมูล">
         <button className="btn" onClick={() => demo('ส่งออกรายงานเรือนเพาะชำ (Excel / PDF)')}>⬇ ส่งออก</button>
-        <button className="btn" onClick={() => setSaleForm({})}>＋ ขาย / แจก</button>
-        <button className="btn primary" onClick={() => setBatchForm({})}>＋ เพิ่มล็อตเพาะ</button>
+        <button className="btn" onClick={() => setSaleForm({})}>＋ บันทึกขาย / แจก</button>
+        <button className="btn primary" onClick={() => setBatchForm({})}>＋ บันทึกการเพาะ</button>
       </PageHead>
       <div className="kpi-grid">
         <Kpi icon="🌰" label="เพาะทั้งหมด" value={`${num(totals.sown)} ต้น`} />
@@ -75,17 +93,17 @@ export default function Seedlings() {
         <Kpi icon="🛒" label="พร้อมจำหน่าย (คงเหลือ)" value={`${num(totals.available)} ต้น`} sub={`ขาย ${num(totals.sold)} · แจก ${num(totals.given)}`} />
         <Kpi icon="💰" label="รายได้จากการขาย" value={baht(totals.revenue)} tone="blue" />
       </div>
-      <Card title="ล็อตการเพาะ">
-        <DataTable cols={batchCols} rows={batches} onEdit={setBatchForm}
+      <div className="grid-2">
+        <Card title="กล้าไม้ที่เพาะแต่ละเดือน (ต้น)"><Chart color="#16a34a" labels={months.map((m) => m[0])} values={months.map((m) => m[1])} unit="ต้น" /></Card>
+        <Card title="กล้าไม้ขาย / แจก แต่ละเดือน (ต้น)"><Chart color="#0d9488" labels={months.map((m) => m[0])} values={months.map((m) => m[2])} unit="ต้น" /></Card>
+      </div>
+      <Card title="บันทึกการเพาะ">
+        <DataTable cols={batchCols} rows={batches} onEdit={(r) => setBatchForm(withSpecies(r))}
           onDelete={async (r) => {
             if (sales.some((s) => s.batchId === r.id)) return demo('ล็อตนี้มีรายการขาย/แจกแล้ว ลบไม่ได้ (ลบรายการก่อน)');
             await remove('seedBatches', r.id);
           }} />
       </Card>
-      <div className="grid-2">
-        <Card title="อัตรารอดแต่ละล็อต (%)"><Chart color="#16a34a" labels={batches.map((b) => b.species)} values={batches.map((b) => +b.rate.toFixed(1))} unit="%" /></Card>
-        <Card title="คงเหลือพร้อมขายแต่ละล็อต"><Chart color="#0d9488" labels={batches.map((b) => b.species)} values={batches.map((b) => b.available)} unit="ต้น" /></Card>
-      </div>
       <Card title="ประวัติการขาย / แจก">
         <DataTable cols={saleCols} rows={sales} onEdit={setSaleForm} onDelete={(r) => remove('seedSales', r.id)} />
       </Card>

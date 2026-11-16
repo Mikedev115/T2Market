@@ -1,9 +1,9 @@
 // Builds the 3-month (quarterly) report for the RECOFTC MOU form from raw records.
-import { sum, goatDelta, productReport } from './calc.js';
+import { sum, goatDelta, productReport, hiveBalance } from './calc.js';
 
 export const MOU = {
   start: '2026-08-01', end: '2029-08-31',
-  org: 'วิสาหกิจชุมชนต้นไม้ของเรา รักษ์สันติสุข', project: 'โครงการ Trees4All', partner: 'RECOFTC',
+  org: 'วิสาหกิจชุมชนต้นไม้ของเรา รักษ์สันติสุข', project: 'โครงการ T2Market', partner: 'RECOFTC',
 };
 export const STATUS = { onplan: 'ตามแผน', late: 'ล่าช้า', notstarted: 'ยังไม่ดำเนินการ' };
 export const UNITS = [
@@ -67,15 +67,16 @@ export function buildQuarter(db, p, report) {
 
   /* ---- hive ---- */
   const rounds = [...db.hiveRounds].sort((a, b) => (a.date < b.date ? -1 : 1));
-  const hiveBal = (pred) => { const r = rounds.filter(pred); return r.length ? r[r.length - 1].total : db.settings.hiveOpening.total; };
-  const hStart = hiveBal((r) => r.date < s), hEnd = hiveBal((r) => r.date <= e), hOpen = db.settings.hiveOpening.total;
+  const hiveBal = (pred, startPred) => hiveBalance(db.hiveFarms, rounds, pred, startPred);
+  const hStart = hiveBal((r) => r.date < s, (f) => f.startDate < s), hEnd = hiveBal((r) => r.date <= e, (f) => f.startDate <= e);
+  const hOpen = sum(db.hiveFarms, (f) => f.startHives);
   const beeSales = db.stockMoves.filter((m) => m.type === 'sale' && db.products.find((x) => x.id === m.productId)?.kind === 'bee');
   const [honeyP, honeyC] = range(rounds, null, (r) => r.honeyKg);
   const [soldP, soldC] = range(rounds, null, (r) => r.honeySoldKg);
   const [incP, incC] = range(rounds, null, (r) => r.income);
   const [bsP, bsC] = range(beeSales, null, (m) => m.qty * m.unitPrice);
   const hive = rows('hive', [
-    ['farmers', 'ผู้เลี้ยงที่ดำเนินกิจกรรม', 'ราย', manual('hive'), manual('hive')],
+    ['farmers', 'ผู้เลี้ยงที่ดำเนินกิจกรรม', 'ราย', db.hiveFarms.length, db.hiveFarms.length],
     ['start', 'จำนวนรังต้นงวด', 'รัง', hStart, hOpen],
     ['net', 'รังเพิ่ม / ลดสุทธิ', 'รัง', hEnd - hStart, hEnd - hOpen],
     ['end', 'จำนวนรังปลายงวด', 'รัง', hEnd, hEnd],

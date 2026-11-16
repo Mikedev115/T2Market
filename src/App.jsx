@@ -11,10 +11,6 @@ import Seedlings from './pages/Seedlings.jsx';
 import Goats from './pages/Goats.jsx';
 import Products from './pages/Products.jsx';
 import Ledger from './pages/Ledger.jsx';
-import Orders from './pages/Orders.jsx';
-import Order from './pages/Order.jsx';
-import Booking from './pages/Booking.jsx';
-import Done from './pages/Done.jsx';
 import { isIn } from './lib/auth.js';
 
 // Floating switch between the public site (หน้าบ้าน) and back office (หลังบ้าน).
@@ -45,9 +41,6 @@ export default function App() {
       <Routes>
         <Route path="/" element={<PublicSite />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/order" element={<Order />} />
-        <Route path="/booking" element={<Booking />} />
-        <Route path="/done/:type/:id" element={<Done />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="report" element={<Report />} />
@@ -57,7 +50,6 @@ export default function App() {
           <Route path="seedlings" element={<Seedlings />} />
           <Route path="products" element={<Products />} />
           <Route path="ledger" element={<Ledger />} />
-          <Route path="orders" element={<Orders />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

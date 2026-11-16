@@ -77,7 +77,7 @@ const SCENES = {
     <Sun x={64} y={48} /><Cloud x={210} y={38} s={1.1} /><Cloud x={344} y={64} s={.7} /><Hills />
     <Tree x={348} y={192} s={.85} /><Tree x={44} y={194} s={.7} />
     <g transform="translate(210 100)"><rect x="-4" y="40" width="8" height="64" fill="#8a5a33" /><rect x="-72" y="-14" width="144" height="60" rx="12" fill="#8a5a33" /><rect x="-67" y="-9" width="134" height="50" rx="9" fill="#fff6dc" />
-      <text x="0" y="14" textAnchor="middle" fontSize="15" fontWeight="700" fill="#14532d" fontFamily="Prompt, sans-serif">ยินดีต้อนรับ</text><text x="0" y="32" textAnchor="middle" fontSize="10.500" fill="#4d7a58" fontFamily="Prompt, sans-serif">ศึกษาดูงาน Trees4All</text></g>
+      <text x="0" y="14" textAnchor="middle" fontSize="15" fontWeight="700" fill="#14532d" fontFamily="Prompt, sans-serif">ยินดีต้อนรับ</text><text x="0" y="32" textAnchor="middle" fontSize="10.500" fill="#4d7a58" fontFamily="Prompt, sans-serif">ศึกษาดูงาน T2Market</text></g>
     <Person x={78} y={246} s={1.55} shirt="#e11d48" hat wave skin="#e8b98f" /><Person x={140} y={252} s={1.45} shirt="#2563eb" skin="#f2c9a0" /><Person x={208} y={254} s={1.4} shirt="#f59e0b" skin="#d9a273" hair="#1f1408" />
     <Person x={272} y={252} s={1.45} shirt="#7c3aed" skin="#f2c9a0" hair="#7a4a1d" /><Person x={334} y={246} s={1.5} shirt="#0d9488" hat skin="#e8b98f" />
     <Flower x={30} y={246} c="#ff7aa8" /><Flower x={376} y={248} c="#ffffff" /><Grass x={110} y={256} s={1.2} />
