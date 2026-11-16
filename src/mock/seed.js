@@ -23,14 +23,14 @@ export function createSeed() {
   ].map((f) => ({ id: id('f'), ...f }));
   // [farm index, date, hives now, honey kg, honey sold kg, income, note]
   const hiveRounds = [
-    [0, '2026-08-20', 10, 0.3, 0, 0, ''], [1, '2026-08-22', 9, 0.2, 0, 0, ''], [2, '2026-08-28', 9, 0.2, 0.2, 200, ''],
-    [0, '2026-09-18', 12, 0.5, 0.3, 300, 'ขยายรังเพิ่ม 2 รัง'], [3, '2026-09-20', 9, 0.4, 0, 0, ''], [4, '2026-09-25', 9, 0.3, 0.2, 200, ''],
+    [0, '2026-08-20', 10, 0.4, 0, 0, ''], [1, '2026-08-22', 9, 0.2, 0, 0, ''], [2, '2026-08-28', 9, 0.2, 0.2, 200, ''],
+    [0, '2026-09-18', 12, 0.6, 0.3, 300, 'ขยายรังเพิ่ม 2 รัง'], [3, '2026-09-20', 9, 0.4, 0, 0, ''], [4, '2026-09-25', 9, 0.3, 0.2, 200, ''],
     [1, '2026-10-05', 11, 0.6, 0.5, 500, ''], [5, '2026-10-08', 9, 0.4, 0, 0, ''], [6, '2026-10-12', 8, 0.2, 0, 0, ''],
-    [0, '2026-10-20', 13, 0.8, 0.7, 700, 'ช่วงดอกไม้บาน'], [2, '2026-10-24', 10, 0.5, 0.4, 400, ''],
+    [0, '2026-10-20', 13, 1.0, 0.7, 700, 'ช่วงดอกไม้บาน'], [2, '2026-10-24', 10, 0.5, 0.4, 400, ''],
     [3, '2026-11-02', 10, 0.6, 0.5, 500, ''], [4, '2026-11-06', 10, 0.5, 0.4, 400, ''], [5, '2026-11-10', 10, 0.7, 0.5, 500, ''],
     [6, '2026-11-12', 9, 0.4, 0.3, 300, ''], [1, '2026-11-14', 12, 0.7, 0.2, 200, 'รังแข็งแรง'],
   ].map(([fi, date, total, honeyKg, honeySoldKg, income, note], i) => ({
-    id: id('h'), farmerId: hiveFarms[fi].id, date, total, honeyKg, honeySoldKg, income, note,
+    id: id('h'), farmerId: hiveFarms[fi].id, date, total, honeyKg: +(honeyKg * 5).toFixed(2), honeySoldKg, income, note,
     photos: i >= 13 ? [samplePhoto('รังชันโรง', '#f59e0b', '#b45309', '🐝')] : [],
   }));
 
@@ -144,6 +144,8 @@ export function createSeed() {
   return {
     ledger, hiveFarms, hiveRounds, visits, seedBatches, seedSales, goatEvents, products, stockMoves, reports,
     settings: {
+      // honey bonus: a farmer who harvests >= targetKg in total gets `bonus` baht
+      hiveBonus: { targetKg: 10, bonus: 300 },
       goatOpening: { date: '2026-08-01', male: 5, female: 14 },
     },
   };

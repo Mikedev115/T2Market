@@ -6,8 +6,10 @@ import { Kpi, PageHead, Card, DataTable, FormModal, PhotoStrip, useDemo } from '
 import Chart from '../components/Chart.jsx';
 
 export default function Hives() {
-  const { db, create, update, remove } = useData();
+  const { db, create, update, remove, saveSettings } = useData();
   const demo = useDemo();
+  const [bonusForm, setBonusForm] = useState(null);
+  const bonus = db.settings.hiveBonus || { targetKg: 10, bonus: 300 };
   const [farmForm, setFarmForm] = useState(null);
   const [form, setForm] = useState(null);
   const [sel, setSel] = useState('all'); // farmer filter
@@ -50,6 +52,12 @@ export default function Hives() {
     { label: 'บันทึก', render: (r) => <span className="muted">{r.note || '—'}</span> },
   ];
   const t = rep.totals;
+  const reached = (f) => f.honey >= bonus.targetKg;
+  const winners = rep.farms.filter(reached).length;
+  const bonusFields = [
+    { key: 'targetKg', label: 'เก็บน้ำผึ้งรวมครบ (กก.)', type: 'number', min: 0, required: true },
+    { key: 'bonus', label: 'โบนัสที่ได้รับ (บาท)', type: 'number', min: 0, required: true },
+  ];
   const chartRows = shown.slice().reverse().reverse();
   const perFarmKg = rep.farms.filter((f) => sel === 'all' || f.id === sel);
 
@@ -68,6 +76,10 @@ export default function Hives() {
         <Kpi icon="💰" label="รายได้ขายน้ำผึ้งสด" value={baht(t.income)} tone="blue" sub={`ขายแล้ว ${num(t.honeySold)} กก.`} />
       </div>
 
+      <Card title="🎁 โบนัสเก็บน้ำผึ้ง" right={<button className="link" onClick={() => setBonusForm(bonus)}>ตั้งค่าเงื่อนไข</button>}>
+        <p>เกษตรกรที่เก็บน้ำผึ้งรวมครบ <b>{num(bonus.targetKg)} กก.</b> รับโบนัส <b>{baht(bonus.bonus)}</b> · ได้รับโบนัสแล้ว <b>{winners} ราย</b> (รวม {baht(winners * bonus.bonus)})</p>
+      </Card>
+
       <Card title="เกษตรกรแต่ละราย" right={<small className="muted">แตะชื่อเพื่อดูเฉพาะฟาร์ม</small>}>
         <div className="chips">
           <button className={`chip ${sel === 'all' ? 'on' : ''}`} onClick={() => setSel('all')}>ทั้งหมด</button>
@@ -84,6 +96,8 @@ export default function Hives() {
               <div className="farm-line"><span>รังปัจจุบัน</span><b>{num(f.current)} รัง</b></div>
               <div className="farm-line"><span>เก็บน้ำผึ้งแล้ว</span><b>{f.harvests} ครั้ง</b></div>
               <div className="farm-line total"><span>ปริมาณรวม</span><b>{num(f.honey)} กก.</b></div>
+              <div className="stock-bar"><div><i style={{ width: `${Math.min(100, (f.honey / (bonus.targetKg || 1)) * 100)}%` }} /></div>
+                {reached(f) ? <span className="tag green">🎉 ครบ {num(bonus.targetKg)} กก. ได้โบนัส {baht(bonus.bonus)}</span> : <small className="muted">อีก {num(+(bonus.targetKg - f.honey).toFixed(2))} กก. ครบโบนัส {baht(bonus.bonus)}</small>}</div>
               <button className="btn sm block" onClick={() => setForm({ farmerId: f.id, total: f.current })}>＋ บันทึกเก็บน้ำผึ้ง</button>
             </div>
           ))}
@@ -100,6 +114,7 @@ export default function Hives() {
         <DataTable cols={cols} rows={[...chartRows].reverse()} onEdit={setForm} onDelete={(r) => remove('hiveRounds', r.id)} />
       </Card>
 
+      {bonusForm && <FormModal title="ตั้งค่าโบนัสเก็บน้ำผึ้ง" fields={bonusFields} initial={bonusForm} onSave={(d) => saveSettings({ hiveBonus: d })} onClose={() => setBonusForm(null)} />}
       {farmForm && <FormModal title={farmForm.id ? 'แก้ไขข้อมูลเกษตรกร' : 'เพิ่มเกษตรกร (รังตั้งต้น)'} fields={farmFields} initial={farmForm} onSave={saveFarm} onClose={() => setFarmForm(null)} />}
       {form && <FormModal key={form.id ?? 'new'} title={form.id ? 'แก้ไขบันทึกเก็บน้ำผึ้ง' : 'บันทึกเก็บน้ำผึ้ง'} fields={fields} initial={form} onSave={save} onClose={() => setForm(null)}
         validate={(v) => (v.total <= 0 ? 'กรุณาใส่จำนวนรังตอนนี้' : v.honeySoldKg > v.honeyKg ? 'น้ำผึ้งที่ขายต้องไม่เกินที่เก็บได้' : '')} />}
